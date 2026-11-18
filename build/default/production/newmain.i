@@ -2675,7 +2675,7 @@ volatile int16_t rot_actual = 0;
 volatile uint8_t flag_10ms = 0;
 
 
-static uint8_t sh_portc = 0x00;
+static uint8_t sh_portc = 0x20;
 static uint8_t bobinas = 0x00;
 static uint8_t led = 0x00;
 static uint8_t y_dir_actual = 0xFF;
@@ -2788,15 +2788,16 @@ static void init_puertos(void)
 
     TRISA = 0x01;
     TRISB = 0x3A;
+    PORTC = 0x20;
     TRISC = 0x00;
     TRISD = 0x00;
-    PORTE = 0x02;
     TRISE = 0x00;
+    PORTE = 0x00;
 
     PORTA = 0x00;
     PORTB = 0x00;
     PORTD = 0x00;
-    sh_portc = 0x00;
+    sh_portc = 0x20;
     PORTC = sh_portc;
 
     WPUB = 0x3A;
@@ -2863,7 +2864,8 @@ void main(void)
     for (uint8_t i = 0; i < 3000 / 100; i++) {
         _delay((unsigned long)((100)*(8000000UL/4000.0)));
     }
-    PORTEbits.RE1 = 0;
+    sh_portc &= ~0x20;
+    PORTC = sh_portc;
 
 
 

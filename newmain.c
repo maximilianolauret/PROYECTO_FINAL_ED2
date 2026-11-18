@@ -12,10 +12,10 @@
  *
  *  Conexiones (pin del DIP-40):
  *    pin  2  RA0/AN0  Cursor del potenciometro (+ 100 nF a GND). Entrada analogica.
- *    pin  9  RE1      A4988 EN (activo en bajo, pull-up 10k a +5V). Se habilita
- *                     3 s despues de arrancar.
  *    pin 15  RC0      A4988 STEP
  *    pin 17  RC2      A4988 DIR
+ *    pin 24  RC5      A4988 EN (activo en bajo, pull-up 10k a +5V). Se habilita
+ *                     3 s despues de arrancar.
  *    pin 19  RD0      ULN2003A IN1
  *    pin 21  RD2      ULN2003A IN2
  *    pin 27  RD4      ULN2003A IN3
@@ -28,7 +28,7 @@
  *    MCLR             Libre (MCLRE = OFF)
  *    RB6/RB7          Libres (PGC/PGD para grabar)
  *
- *    A4988: EN en RE1 con pull-up 10k (deshabilitado hasta que el PIC
+ *    A4988: EN en RC5 con pull-up 10k (deshabilitado hasta que el PIC
  *           lo baje), RESET unido a SLEEP,
  *           MS1/MS2/MS3 sin conectar (pull-downs internos -> paso completo),
  *           VDD = 5 V, VMOT = 12 V con capacitor 100 uF.
@@ -94,11 +94,11 @@ static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
 
 #define MASK_STEP     0x01        // RC0
 #define MASK_DIR      0x04        // RC2
+#define MASK_EN       0x20        // RC5 (activo en bajo)
 
 #define MASK_LED      0x80        // RD7
 
-#define A4988_EN      PORTEbits.RE1   // Activo en bajo
-#define EN_DEMORA_MS  3000            // Espera antes de habilitar el driver
+#define EN_DEMORA_MS  3000        // Espera antes de habilitar el A4988
 
 /* Timer0: Fosc/4 = 2 MHz, prescaler 1:8 -> 4 us/cuenta; 250 cuentas = 1 ms */
 #define TMR0_RECARGA  6
@@ -120,7 +120,7 @@ volatile int16_t  rot_actual   = 0;       // Solo la modifica la ISR
 volatile uint8_t  flag_10ms    = 0;       // Base de tiempo para el main
 
 /* Variables propias de la ISR */
-static uint8_t  sh_portc     = 0x00;      // Sombra de PORTC
+static uint8_t  sh_portc     = MASK_EN;   // Sombra de PORTC (EN=1 -> deshabilitado)
 static uint8_t  bobinas      = 0x00;      // Bits de PORTD de IN1..IN4
 static uint8_t  led          = 0x00;      // Estado de RD7
 static uint8_t  y_dir_actual = 0xFF;      // 0xFF = DIR todavia no fijado
@@ -233,15 +233,16 @@ static void init_puertos(void)
 
     TRISA = 0x01;                   // RA0 entrada (potenciometro)
     TRISB = 0x3A;                   // RB1, RB3 (pulsadores) y RB4, RB5 (fin. carrera) entradas
-    TRISC = 0x00;                   // STEP, DIR salidas
+    PORTC = MASK_EN;                // EN=1 antes de hacer salida al pin
+    TRISC = 0x00;                   // STEP, DIR, EN salidas
     TRISD = 0x00;                   // Bobinas y LED salidas
-    PORTE = 0x02;                   // RE1 = 1 -> A4988 deshabilitado (antes del TRIS)
-    TRISE = 0x00;                   // RE1 salida (AN6 ya es digital: ANSEL = 0x01)
+    TRISE = 0x00;
+    PORTE = 0x00;
 
     PORTA = 0x00;
     PORTB = 0x00;
     PORTD = 0x00;
-    sh_portc = 0x00;                // STEP=0, DIR=0
+    sh_portc = MASK_EN;             // STEP=0, DIR=0, EN=1 (A4988 deshabilitado)
     PORTC = sh_portc;
 
     WPUB = 0x3A;                    // Pull-ups internos en RB1, RB3, RB4, RB5
@@ -308,7 +309,8 @@ void main(void)
     for (uint8_t i = 0; i < EN_DEMORA_MS / 100; i++) {
         __delay_ms(100);
     }
-    A4988_EN = 0;                   // Habilitar A4988
+    sh_portc &= ~MASK_EN;           // Habilitar A4988 (la ISR mantiene este valor)
+    PORTC = sh_portc;
 
     /* La posicion del potenciometro al encender se toma como posicion actual
        de la PCB (no hay sensor de origen en el eje de rotacion). */
