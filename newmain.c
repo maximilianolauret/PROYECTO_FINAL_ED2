@@ -1,29 +1,36 @@
 /*
  * ============================================================================
  *  Soporte de soldadura "manos libres" - Proyecto final Electronica Digital 2
- *  PROGRAMA FINAL (integra prueba_nema17_a4988.c + test_uln2003.c)
+ *  PROGRAMA FINAL - version con pines alternados (un pin libre entre cada
+ *  conexion) para la placa perforada
  * ============================================================================
  *  MCU        : PIC16F887 @ 8 MHz (oscilador interno, sin cristal)
  *  Compilador : XC8 (MPLAB X)
  *
  *  Eje Y    : NEMA17 + A4988      -> pulsadores SUBIR / BAJAR
- *  Rotacion : 28BYJ-48 + ULN2003A -> potenciometro 10k = angulo 0..360 grados
+ *  Rotacion : 28BYJ-48 + ULN2003A -> potenciometro = angulo 0..360 grados
  *
- *  Conexiones:
- *    RA0/AN0   Cursor del potenciometro 10k (extremos a +5V y GND)
- *              + capacitor 100 nF de RA0 a GND (filtro, opcional)
- *    RB0       Pulsador SUBIR   (a GND, pull-up interno)
- *    RB1       Pulsador BAJAR   (a GND, pull-up interno)
- *    RC0       A4988 STEP       (en la prueba estaba en RD0)
- *    RC1       A4988 DIR        (en la prueba estaba en RD1)
- *    RC2       A4988 EN         (en la prueba estaba en RD2) activo en bajo
- *    RB2..RB5  ULN2003A IN1..IN4 (antes RD0..RD3)
- *              (RB6/RB7 se dejan libres: son PGC/PGD del programador ICSP)
- *    RD7       LED de vida (opcional, con resistencia 330R a GND)
- *    MCLR      Libre (MCLRE = OFF, no hace falta pull-up)
+ *  Conexiones (pin del DIP-40):
+ *    pin  2  RA0/AN0  Cursor del potenciometro (+ 100 nF a GND). Entrada analogica.
+ *    pin 15  RC0      A4988 STEP
+ *    pin 17  RC2      A4988 DIR
+ *    pin 19  RD0      ULN2003A IN1
+ *    pin 21  RD2      ULN2003A IN2
+ *    pin 27  RD4      ULN2003A IN3
+ *    pin 29  RD6      ULN2003A IN4
+ *    pin 34  RB1      Pulsador BAJAR (a GND, pull-up interno de PORTB)
+ *    pin 36  RB3      Pulsador SUBIR (a GND, pull-up interno de PORTB)
+ *    pin 37  RB4      Final de carrera INFERIOR: sin conectar (pull-up interno
+ *    pin 38  RB5      Final de carrera SUPERIOR:  lo deja siempre inactivo)
+ *    pin 30  RD7      LED de vida (opcional, sin conectar en la placa)
+ *    MCLR             Libre (MCLRE = OFF)
+ *    RB6/RB7          Libres (PGC/PGD para grabar)
  *
- *    A4988: RESET unido a SLEEP, MS1/MS2/MS3 a GND (paso completo),
+ *    A4988: EN a GND (siempre habilitado), RESET unido a SLEEP,
+ *           MS1/MS2/MS3 sin conectar (pull-downs internos -> paso completo),
  *           VDD = 5 V, VMOT = 12 V con capacitor 100 uF.
+ *    Alimentacion: fuente de 5 V para todo, fuente de 12 V solo para VMOT,
+ *                  masas unidas.
  *
  *  Funcionamiento:
  *    - Timer0 interrumpe cada 1 ms. La ISR genera los pasos de AMBOS motores
@@ -32,6 +39,8 @@
  *      solo actualiza las variables de mando (y_cmd, rot_objetivo).
  *    - El eje Y se mueve mientras se mantiene un pulsador; ninguno o ambos:
  *      quieto, con torque de retencion (driver siempre habilitado).
+ *    - Finales de carrera (si algun dia se conectan, a GND): con el superior
+ *      activo no sube, con el inferior activo no baja.
  * ============================================================================
  */
 
@@ -46,7 +55,7 @@
 #pragma config IESO  = OFF
 #pragma config FCMEN = OFF
 #pragma config LVP   = OFF              // Necesario para usar RB3 como I/O normal
-#pragma config BOR4V = BOR21V           // Brown-out a 2.1 V (con BOR40V puede quedar en reset)
+#pragma config BOR4V = BOR21V           // Brown-out a 2.1 V
 #pragma config WRT   = OFF
 
 #include <xc.h>
@@ -57,7 +66,6 @@
 /* ----------------------------- Parametros ajustables ---------------------- */
 #define Y_DIR_SUBE            1   // Nivel de DIR que hace SUBIR (invertir si va al reves)
 #define Y_DIV                 1   // ms entre flancos de STEP -> f_paso = 1000/(2*Y_DIV) Hz
-                                  // Y_DIV=1 -> 500 pasos/s (igual que T_PASO_US=2000 de la prueba)
 
 /* 28BYJ-48 en PASO COMPLETO de 2 fases (2 bobinas a la vez): maximo torque.
    2048 pasos por vuelta del eje de salida. */
@@ -65,9 +73,7 @@
 #define ROT_HISTERESIS        4   // cuentas ADC de zona muerta (evita temblor por ruido)
 
 /* Rampa de velocidad (ms por paso): arranca lento, acelera y frena al llegar.
-   El 28BYJ-48 no arranca de golpe a mas de ~300-400 pasos/s: sin rampa se traba.
-   Ultimo valor = velocidad maxima. 3 ms -> 333 pasos/s -> ~6 s por vuelta.
-   Si anda bien, se puede probar agregar un 2 al final (mas rapido). */
+   Ultimo valor = velocidad maxima. 3 ms -> 333 pasos/s -> ~6 s por vuelta. */
 static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
 #define RAMPA_N      (sizeof(RAMPA) / sizeof(RAMPA[0]))
 #define RAMPA_PASOS  16           // pasos que dura cada escalon de la rampa
@@ -75,16 +81,15 @@ static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
 #define LED_VIDA_MS         500   // Periodo de parpadeo del LED de vida (RD7)
 
 /* ----------------------------- Pines -------------------------------------- */
-#define BTN_SUBIR     PORTBbits.RB0
+#define BTN_SUBIR     PORTBbits.RB3
 #define BTN_BAJAR     PORTBbits.RB1
-#define PRESIONADO    0           // Pulsadores a GND con pull-up -> activo en bajo
+#define FC_SUPERIOR   PORTBbits.RB5
+#define FC_INFERIOR   PORTBbits.RB4
+#define PRESIONADO    0           // Pulsadores y finales de carrera a GND -> activos en bajo
 
 #define MASK_STEP     0x01        // RC0
-#define MASK_DIR      0x02        // RC1
-#define MASK_EN       0x04        // RC2 (activo en bajo)
+#define MASK_DIR      0x04        // RC2
 
-#define MASK_BOBINAS  0x3C        // RB2..RB5
-#define SHIFT_BOBINAS 2           // IN1 en el bit 2 de PORTB
 #define MASK_LED      0x80        // RD7
 
 /* Timer0: Fosc/4 = 2 MHz, prescaler 1:8 -> 4 us/cuenta; 250 cuentas = 1 ms */
@@ -95,10 +100,10 @@ static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
 #define Y_SUBIR       1
 #define Y_BAJAR       2
 
-/* Secuencia de paso completo, 2 fases (IN1..IN4 = bit0..bit3, se
-   desplazan a RB2..RB5 al escribir PORTB):
+/* Secuencia de paso completo, 2 fases, ya escrita en los bits de PORTD:
+   IN1 = RD0 (0x01), IN2 = RD2 (0x04), IN3 = RD4 (0x10), IN4 = RD6 (0x40)
    IN1+IN2, IN2+IN3, IN3+IN4, IN4+IN1 */
-static const uint8_t SECUENCIA[4] = { 0x03, 0x06, 0x0C, 0x09 };
+static const uint8_t SECUENCIA[4] = { 0x05, 0x14, 0x50, 0x41 };
 
 /* ----------------------------- Variables compartidas ---------------------- */
 volatile uint8_t  y_cmd        = Y_STOP;  // Escrita por main, leida por ISR
@@ -107,8 +112,8 @@ volatile int16_t  rot_actual   = 0;       // Solo la modifica la ISR
 volatile uint8_t  flag_10ms    = 0;       // Base de tiempo para el main
 
 /* Variables propias de la ISR */
-static uint8_t  sh_portc     = 0x00;      // Sombra de PORTC (EN=0 -> habilitado)
-static uint8_t  bobinas      = 0x00;      // Estado de IN1..IN4 (bit0..bit3)
+static uint8_t  sh_portc     = 0x00;      // Sombra de PORTC
+static uint8_t  bobinas      = 0x00;      // Bits de PORTD de IN1..IN4
 static uint8_t  led          = 0x00;      // Estado de RD7
 static uint8_t  y_dir_actual = 0xFF;      // 0xFF = DIR todavia no fijado
 static uint8_t  cont_y       = 0;
@@ -143,7 +148,11 @@ void __interrupt() isr(void)
         }
 
         /* ---- Eje Y (A4988) ---- */
-        if (y_cmd != Y_STOP) {
+        uint8_t mover_y = 0;
+        if      (y_cmd == Y_SUBIR) mover_y = (FC_SUPERIOR != PRESIONADO);
+        else if (y_cmd == Y_BAJAR) mover_y = (FC_INFERIOR != PRESIONADO);
+
+        if (mover_y) {
             uint8_t dir = (y_cmd == Y_SUBIR) ? Y_DIR_SUBE : !Y_DIR_SUBE;
 
             if (dir != y_dir_actual) {
@@ -190,8 +199,6 @@ void __interrupt() isr(void)
 
                 if (pasos_rampa < 0xFFFF) pasos_rampa++;
 
-                /* Escalon de velocidad: limitado por lo que acelero y por
-                   lo que falta para llegar (frenado) */
                 uint16_t n_acel  = pasos_rampa / RAMPA_PASOS;
                 uint16_t n_freno = (dist - 1) / RAMPA_PASOS;
                 uint16_t n = (n_acel < n_freno) ? n_acel : n_freno;
@@ -199,8 +206,7 @@ void __interrupt() isr(void)
                 periodo_rot = RAMPA[n];
             }
         }
-        PORTB = (uint8_t)((bobinas << SHIFT_BOBINAS) & MASK_BOBINAS);  // RB0/RB1 son entradas: no se afectan
-        PORTD = led;
+        PORTD = bobinas | led;                   // Bobinas (RD0/2/4/6) + LED (RD7)
     }
 }
 
@@ -218,19 +224,19 @@ static void init_puertos(void)
     ANSELH = 0x00;                  // PORTB digital (en el 887 arranca analogico)
 
     TRISA = 0x01;                   // RA0 entrada (potenciometro)
-    TRISB = 0x03;                   // RB0, RB1 entradas (pulsadores); RB2..RB5 bobinas
-    TRISC = 0x00;                   // STEP, DIR, EN salidas
-    TRISD = 0x00;                   // RD7 LED de vida
+    TRISB = 0x3A;                   // RB1, RB3 (pulsadores) y RB4, RB5 (fin. carrera) entradas
+    TRISC = 0x00;                   // STEP, DIR salidas
+    TRISD = 0x00;                   // Bobinas y LED salidas
     TRISE = 0x00;
 
     PORTA = 0x00;
     PORTB = 0x00;
     PORTD = 0x00;
     PORTE = 0x00;
-    sh_portc = 0x00;                // STEP=0, DIR=0, EN=0 (A4988 habilitado)
+    sh_portc = 0x00;                // STEP=0, DIR=0
     PORTC = sh_portc;
 
-    WPUB = 0x03;                    // Pull-ups internos solo en RB0, RB1
+    WPUB = 0x3A;                    // Pull-ups internos en RB1, RB3, RB4, RB5
 }
 
 static void init_adc(void)
@@ -254,7 +260,7 @@ static void init_timer0(void)
  * ============================================================================ */
 static uint16_t leer_adc(void)
 {
-    __delay_us(10);                 // Tiempo de adquisicion (pote 10k: Rs max = 2.5k)
+    __delay_us(10);                 // Tiempo de adquisicion
     ADCON0bits.GO_nDONE = 1;
     while (ADCON0bits.GO_nDONE);
     return (uint16_t)((ADRESH << 8) | ADRESL);

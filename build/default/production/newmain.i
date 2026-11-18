@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "newmain.c" 2
-# 39 "newmain.c"
+# 48 "newmain.c"
 #pragma config FOSC = INTRC_NOCLKOUT
 #pragma config WDTE = OFF
 #pragma config PWRTE = ON
@@ -2662,11 +2662,11 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 29 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/xc.h" 2 3
-# 53 "newmain.c" 2
-# 71 "newmain.c"
+# 62 "newmain.c" 2
+# 77 "newmain.c"
 static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
-# 101 "newmain.c"
-static const uint8_t SECUENCIA[4] = { 0x03, 0x06, 0x0C, 0x09 };
+# 106 "newmain.c"
+static const uint8_t SECUENCIA[4] = { 0x05, 0x14, 0x50, 0x41 };
 
 
 volatile uint8_t y_cmd = 0;
@@ -2711,15 +2711,19 @@ void __attribute__((picinterrupt(("")))) isr(void)
         }
 
 
-        if (y_cmd != 0) {
+        uint8_t mover_y = 0;
+        if (y_cmd == 1) mover_y = (PORTBbits.RB5 != 0);
+        else if (y_cmd == 2) mover_y = (PORTBbits.RB4 != 0);
+
+        if (mover_y) {
             uint8_t dir = (y_cmd == 1) ? 1 : !1;
 
             if (dir != y_dir_actual) {
 
 
                 y_dir_actual = dir;
-                if (dir) sh_portc |= 0x02;
-                else sh_portc &= ~0x02;
+                if (dir) sh_portc |= 0x04;
+                else sh_portc &= ~0x04;
                 sh_portc &= ~0x01;
                 cont_y = 0;
             } else if (++cont_y >= 1) {
@@ -2758,8 +2762,6 @@ void __attribute__((picinterrupt(("")))) isr(void)
 
                 if (pasos_rampa < 0xFFFF) pasos_rampa++;
 
-
-
                 uint16_t n_acel = pasos_rampa / 16;
                 uint16_t n_freno = (dist - 1) / 16;
                 uint16_t n = (n_acel < n_freno) ? n_acel : n_freno;
@@ -2767,8 +2769,7 @@ void __attribute__((picinterrupt(("")))) isr(void)
                 periodo_rot = RAMPA[n];
             }
         }
-        PORTB = (uint8_t)((bobinas << 2) & 0x3C);
-        PORTD = led;
+        PORTD = bobinas | led;
     }
 }
 
@@ -2786,7 +2787,7 @@ static void init_puertos(void)
     ANSELH = 0x00;
 
     TRISA = 0x01;
-    TRISB = 0x03;
+    TRISB = 0x3A;
     TRISC = 0x00;
     TRISD = 0x00;
     TRISE = 0x00;
@@ -2798,7 +2799,7 @@ static void init_puertos(void)
     sh_portc = 0x00;
     PORTC = sh_portc;
 
-    WPUB = 0x03;
+    WPUB = 0x3A;
 }
 
 static void init_adc(void)
@@ -2873,7 +2874,7 @@ void main(void)
 
 
         lectura = 0;
-        if (PORTBbits.RB0 == 0) lectura |= 0x01;
+        if (PORTBbits.RB3 == 0) lectura |= 0x01;
         if (PORTBbits.RB1 == 0) lectura |= 0x02;
 
         if (lectura == lectura_ant) estable = lectura;

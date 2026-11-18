@@ -11,23 +11,23 @@
 [v ___eecpymem __eecpymem `(v  1 e 1 0 ]
 "39
 [v ___memcpyee __memcpyee `(v  1 e 1 0 ]
-"126 C:\Users\maxim\MPLABXProjects\TP_FINAL.X\newmain.c
+"131 C:\Users\maxim\MPLABXProjects\TP_FINAL.X\newmain.c
 [v _isr isr `II(v  1 e 1 0 ]
-"210
+"216
 [v _init_oscilador init_oscilador `(v  1 s 1 init_oscilador ]
-"215
+"221
 [v _init_puertos init_puertos `(v  1 s 1 init_puertos ]
-"236
+"242
 [v _init_adc init_adc `(v  1 s 1 init_adc ]
-"243
+"249
 [v _init_timer0 init_timer0 `(v  1 s 1 init_timer0 ]
-"255
+"261
 [v _leer_adc leer_adc `(us  1 s 2 leer_adc ]
-"263
+"269
 [v _leer_adc_promedio leer_adc_promedio `(us  1 s 2 leer_adc_promedio ]
-"272
+"278
 [v _fijar_objetivo_rot fijar_objetivo_rot `(v  1 s 1 fijar_objetivo_rot ]
-"283
+"289
 [v _main main `(v  1 e 1 0 ]
 "43 C:/Users/maxim/.mchp_packs/Microchip/PIC16Fxxx_DFP/1.8.167/xc8\pic\include\proc/pic16f887.h
 [v _TMR0 TMR0 `VEuc  1 e 1 @1 ]
@@ -35,7 +35,7 @@
 [v _PORTA PORTA `VEuc  1 e 1 @5 ]
 "212
 [v _PORTB PORTB `VEuc  1 e 1 @6 ]
-[s S126 . 1 `uc 1 RB0 1 0 :1:0 
+[s S55 . 1 `uc 1 RB0 1 0 :1:0 
 `uc 1 RB1 1 0 :1:1 
 `uc 1 RB2 1 0 :1:2 
 `uc 1 RB3 1 0 :1:3 
@@ -45,8 +45,8 @@
 `uc 1 RB7 1 0 :1:7 
 ]
 "229
-[u S135 . 1 `S126 1 . 1 0 ]
-[v _PORTBbits PORTBbits `VES135  1 e 1 @6 ]
+[u S64 . 1 `S55 1 . 1 0 ]
+[v _PORTBbits PORTBbits `VES64  1 e 1 @6 ]
 "274
 [v _PORTC PORTC `VEuc  1 e 1 @7 ]
 "336
@@ -74,13 +74,13 @@
 [v _ADRESH ADRESH `VEuc  1 e 1 @30 ]
 "1229
 [v _ADCON0 ADCON0 `VEuc  1 e 1 @31 ]
-[s S78 . 1 `uc 1 ADON 1 0 :1:0 
+[s S99 . 1 `uc 1 ADON 1 0 :1:0 
 `uc 1 GO_nDONE 1 0 :1:1 
 `uc 1 CHS 1 0 :4:2 
 `uc 1 ADCS 1 0 :2:6 
 ]
 "1260
-[s S83 . 1 `uc 1 . 1 0 :1:0 
+[s S104 . 1 `uc 1 . 1 0 :1:0 
 `uc 1 GO 1 0 :1:1 
 `uc 1 CHS0 1 0 :1:2 
 `uc 1 CHS1 1 0 :1:3 
@@ -89,14 +89,14 @@
 `uc 1 ADCS0 1 0 :1:6 
 `uc 1 ADCS1 1 0 :1:7 
 ]
-[s S92 . 1 `uc 1 . 1 0 :1:0 
+[s S113 . 1 `uc 1 . 1 0 :1:0 
 `uc 1 nDONE 1 0 :1:1 
 ]
-[s S95 . 1 `uc 1 . 1 0 :1:0 
+[s S116 . 1 `uc 1 . 1 0 :1:0 
 `uc 1 GO_DONE 1 0 :1:1 
 ]
-[u S98 . 1 `S78 1 . 1 0 `S83 1 . 1 0 `S92 1 . 1 0 `S95 1 . 1 0 ]
-[v _ADCON0bits ADCON0bits `VES98  1 e 1 @31 ]
+[u S119 . 1 `S99 1 . 1 0 `S104 1 . 1 0 `S113 1 . 1 0 `S116 1 . 1 0 ]
+[v _ADCON0bits ADCON0bits `VES119  1 e 1 @31 ]
 "1330
 [v _OPTION_REG OPTION_REG `VEuc  1 e 1 @129 ]
 "1400
@@ -121,113 +121,115 @@
 [v _ANSEL ANSEL `VEuc  1 e 1 @392 ]
 "3433
 [v _ANSELH ANSELH `VEuc  1 e 1 @393 ]
-"71 C:\Users\maxim\MPLABXProjects\TP_FINAL.X\newmain.c
+"77 C:\Users\maxim\MPLABXProjects\TP_FINAL.X\newmain.c
 [v _RAMPA RAMPA `DC[5]uc  1 s 5 RAMPA ]
-"101
-[v _SECUENCIA SECUENCIA `DC[4]uc  1 s 4 SECUENCIA ]
-"104
-[v _y_cmd y_cmd `VEuc  1 e 1 0 ]
-"105
-[v _rot_objetivo rot_objetivo `VEs  1 e 2 0 ]
 "106
-[v _rot_actual rot_actual `VEs  1 e 2 0 ]
-"107
-[v _flag_10ms flag_10ms `VEuc  1 e 1 0 ]
+[v _SECUENCIA SECUENCIA `DC[4]uc  1 s 4 SECUENCIA ]
+"109
+[v _y_cmd y_cmd `VEuc  1 e 1 0 ]
 "110
-[v _sh_portc sh_portc `uc  1 s 1 sh_portc ]
+[v _rot_objetivo rot_objetivo `VEs  1 e 2 0 ]
 "111
-[v _bobinas bobinas `uc  1 s 1 bobinas ]
+[v _rot_actual rot_actual `VEs  1 e 2 0 ]
 "112
-[v _led led `uc  1 s 1 led ]
-"113
-[v _y_dir_actual y_dir_actual `uc  1 s 1 y_dir_actual ]
-"114
-[v _cont_y cont_y `uc  1 s 1 cont_y ]
+[v _flag_10ms flag_10ms `VEuc  1 e 1 0 ]
 "115
-[v _cont_rot cont_rot `uc  1 s 1 cont_rot ]
+[v _sh_portc sh_portc `uc  1 s 1 sh_portc ]
 "116
-[v _cont_10ms cont_10ms `uc  1 s 1 cont_10ms ]
+[v _bobinas bobinas `uc  1 s 1 bobinas ]
 "117
-[v _cont_led cont_led `us  1 s 2 cont_led ]
+[v _led led `uc  1 s 1 led ]
 "118
-[v _fase fase `uc  1 s 1 fase ]
+[v _y_dir_actual y_dir_actual `uc  1 s 1 y_dir_actual ]
 "119
-[v _periodo_rot periodo_rot `uc  1 s 1 periodo_rot ]
+[v _cont_y cont_y `uc  1 s 1 cont_y ]
 "120
-[v _pasos_rampa pasos_rampa `us  1 s 2 pasos_rampa ]
+[v _cont_rot cont_rot `uc  1 s 1 cont_rot ]
 "121
+[v _cont_10ms cont_10ms `uc  1 s 1 cont_10ms ]
+"122
+[v _cont_led cont_led `us  1 s 2 cont_led ]
+"123
+[v _fase fase `uc  1 s 1 fase ]
+"124
+[v _periodo_rot periodo_rot `uc  1 s 1 periodo_rot ]
+"125
+[v _pasos_rampa pasos_rampa `us  1 s 2 pasos_rampa ]
+"126
 [v _ultima_dir ultima_dir `c  1 s 1 ultima_dir ]
-"283
+"289
 [v _main main `(v  1 e 1 0 ]
 {
-"286
-[v main@adc adc `us  1 a 2 31 ]
-[v main@adc_ref adc_ref `us  1 a 2 29 ]
-"285
-[v main@lectura lectura `uc  1 a 1 28 ]
-[v main@estable estable `uc  1 a 1 27 ]
-[v main@lectura_ant lectura_ant `uc  1 a 1 26 ]
-"329
+"292
+[v main@adc adc `us  1 a 2 32 ]
+[v main@adc_ref adc_ref `us  1 a 2 30 ]
+"291
+[v main@lectura lectura `uc  1 a 1 29 ]
+[v main@estable estable `uc  1 a 1 28 ]
+[v main@lectura_ant lectura_ant `uc  1 a 1 27 ]
+"335
 } 0
-"263
+"269
 [v _leer_adc_promedio leer_adc_promedio `(us  1 s 2 leer_adc_promedio ]
 {
-"266
-[v leer_adc_promedio@i i `uc  1 a 1 23 ]
-"265
-[v leer_adc_promedio@suma suma `us  1 a 2 21 ]
-"270
+"272
+[v leer_adc_promedio@i i `uc  1 a 1 24 ]
+"271
+[v leer_adc_promedio@suma suma `us  1 a 2 22 ]
+"276
 } 0
-"255
+"261
 [v _leer_adc leer_adc `(us  1 s 2 leer_adc ]
 {
-"261
+"267
 } 0
-"243
+"249
 [v _init_timer0 init_timer0 `(v  1 s 1 init_timer0 ]
 {
-"250
+"256
 } 0
-"215
+"221
 [v _init_puertos init_puertos `(v  1 s 1 init_puertos ]
 {
-"234
+"240
 } 0
-"210
+"216
 [v _init_oscilador init_oscilador `(v  1 s 1 init_oscilador ]
 {
-"213
+"219
 } 0
-"236
+"242
 [v _init_adc init_adc `(v  1 s 1 init_adc ]
 {
-"241
+"247
 } 0
-"272
+"278
 [v _fijar_objetivo_rot fijar_objetivo_rot `(v  1 s 1 fijar_objetivo_rot ]
 {
-"274
-[v fijar_objetivo_rot@obj obj `s  1 a 2 16 ]
-"272
-[v fijar_objetivo_rot@adc adc `us  1 p 2 6 ]
+"280
+[v fijar_objetivo_rot@obj obj `s  1 a 2 17 ]
 "278
+[v fijar_objetivo_rot@adc adc `us  1 p 2 6 ]
+"284
 } 0
-"126
+"131
 [v _isr isr `II(v  1 e 1 0 ]
 {
-"197
-[v isr@n n `us  1 a 2 10 ]
-"196
-[v isr@n_freno n_freno `us  1 a 2 8 ]
-"195
-[v isr@n_acel n_acel `us  1 a 2 6 ]
-"180
+"204
+[v isr@n n `us  1 a 2 11 ]
+"203
+[v isr@n_freno n_freno `us  1 a 2 9 ]
+"202
+[v isr@n_acel n_acel `us  1 a 2 7 ]
+"189
 [v isr@dist dist `us  1 a 2 4 ]
+"188
+[v isr@dir_190 dir `c  1 a 1 14 ]
 "179
-[v isr@dir_181 dir `c  1 a 1 13 ]
-"170
-[v isr@dif dif `s  1 a 2 14 ]
-"147
-[v isr@dir dir `uc  1 a 1 12 ]
-"205
+[v isr@dif dif `s  1 a 2 15 ]
+"156
+[v isr@dir dir `uc  1 a 1 13 ]
+"151
+[v isr@mover_y mover_y `uc  1 a 1 6 ]
+"211
 } 0
