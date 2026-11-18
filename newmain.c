@@ -12,6 +12,8 @@
  *
  *  Conexiones (pin del DIP-40):
  *    pin  2  RA0/AN0  Cursor del potenciometro (+ 100 nF a GND). Entrada analogica.
+ *    pin  9  RE1      A4988 EN (activo en bajo, pull-up 10k a +5V). Se habilita
+ *                     3 s despues de arrancar.
  *    pin 15  RC0      A4988 STEP
  *    pin 17  RC2      A4988 DIR
  *    pin 19  RD0      ULN2003A IN1
@@ -26,7 +28,8 @@
  *    MCLR             Libre (MCLRE = OFF)
  *    RB6/RB7          Libres (PGC/PGD para grabar)
  *
- *    A4988: EN a GND (siempre habilitado), RESET unido a SLEEP,
+ *    A4988: EN en RE1 con pull-up 10k (deshabilitado hasta que el PIC
+ *           lo baje), RESET unido a SLEEP,
  *           MS1/MS2/MS3 sin conectar (pull-downs internos -> paso completo),
  *           VDD = 5 V, VMOT = 12 V con capacitor 100 uF.
  *    Alimentacion: fuente de 5 V para todo, fuente de 12 V solo para VMOT,
@@ -37,8 +40,10 @@
  *      (sin delays), por eso se pueden mover los dos a la vez.
  *    - El main, cada 10 ms, lee pulsadores (con antirrebote) y el ADC, y
  *      solo actualiza las variables de mando (y_cmd, rot_objetivo).
+ *    - Al encender, el A4988 queda deshabilitado (EN = 1) durante 3 s para
+ *      que la alimentacion del motor se estabilice; despues queda habilitado.
  *    - El eje Y se mueve mientras se mantiene un pulsador; ninguno o ambos:
- *      quieto, con torque de retencion (driver siempre habilitado).
+ *      quieto, con torque de retencion.
  *    - Finales de carrera (si algun dia se conectan, a GND): con el superior
  *      activo no sube, con el inferior activo no baja.
  * ============================================================================
@@ -91,6 +96,9 @@ static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
 #define MASK_DIR      0x04        // RC2
 
 #define MASK_LED      0x80        // RD7
+
+#define A4988_EN      PORTEbits.RE1   // Activo en bajo
+#define EN_DEMORA_MS  3000            // Espera antes de habilitar el driver
 
 /* Timer0: Fosc/4 = 2 MHz, prescaler 1:8 -> 4 us/cuenta; 250 cuentas = 1 ms */
 #define TMR0_RECARGA  6
@@ -227,12 +235,12 @@ static void init_puertos(void)
     TRISB = 0x3A;                   // RB1, RB3 (pulsadores) y RB4, RB5 (fin. carrera) entradas
     TRISC = 0x00;                   // STEP, DIR salidas
     TRISD = 0x00;                   // Bobinas y LED salidas
-    TRISE = 0x00;
+    PORTE = 0x02;                   // RE1 = 1 -> A4988 deshabilitado (antes del TRIS)
+    TRISE = 0x00;                   // RE1 salida (AN6 ya es digital: ANSEL = 0x01)
 
     PORTA = 0x00;
     PORTB = 0x00;
     PORTD = 0x00;
-    PORTE = 0x00;
     sh_portc = 0x00;                // STEP=0, DIR=0
     PORTC = sh_portc;
 
@@ -295,6 +303,12 @@ void main(void)
     init_puertos();
     init_adc();
     __delay_ms(50);                 // Estabilizacion de alimentacion y drivers
+
+    /* Driver deshabilitado 3 s: se espera a que VMOT este estable */
+    for (uint8_t i = 0; i < EN_DEMORA_MS / 100; i++) {
+        __delay_ms(100);
+    }
+    A4988_EN = 0;                   // Habilitar A4988
 
     /* La posicion del potenciometro al encender se toma como posicion actual
        de la PCB (no hay sensor de origen en el eje de rotacion). */

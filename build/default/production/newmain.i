@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "newmain.c" 2
-# 48 "newmain.c"
+# 53 "newmain.c"
 #pragma config FOSC = INTRC_NOCLKOUT
 #pragma config WDTE = OFF
 #pragma config PWRTE = ON
@@ -2662,10 +2662,10 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 29 "C:\\Program Files\\Microchip\\xc8\\v3.10\\pic\\include/xc.h" 2 3
-# 62 "newmain.c" 2
-# 77 "newmain.c"
+# 67 "newmain.c" 2
+# 82 "newmain.c"
 static const uint8_t RAMPA[] = { 10, 7, 5, 4, 3 };
-# 106 "newmain.c"
+# 114 "newmain.c"
 static const uint8_t SECUENCIA[4] = { 0x05, 0x14, 0x50, 0x41 };
 
 
@@ -2790,12 +2790,12 @@ static void init_puertos(void)
     TRISB = 0x3A;
     TRISC = 0x00;
     TRISD = 0x00;
+    PORTE = 0x02;
     TRISE = 0x00;
 
     PORTA = 0x00;
     PORTB = 0x00;
     PORTD = 0x00;
-    PORTE = 0x00;
     sh_portc = 0x00;
     PORTC = sh_portc;
 
@@ -2858,6 +2858,12 @@ void main(void)
     init_puertos();
     init_adc();
     _delay((unsigned long)((50)*(8000000UL/4000.0)));
+
+
+    for (uint8_t i = 0; i < 3000 / 100; i++) {
+        _delay((unsigned long)((100)*(8000000UL/4000.0)));
+    }
+    PORTEbits.RE1 = 0;
 
 
 
